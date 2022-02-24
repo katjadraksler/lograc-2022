@@ -63,7 +63,18 @@ data Bool : Set where
 -}
 
 _⊕_ : Bool → Bool → Bool
-b ⊕ b' = {!!}
+true ⊕ true = false
+true ⊕ false = true
+false ⊕ true = true
+false ⊕ false = false
+
+--Komentarji
+-- C c + C l : loading
+-- C c + C c : da splita glede na primere tam kjer je vprašaj, 
+--              vpišeš v terminal spremenljivko in daš enter
+-- C c + C space : ko vstaviš v polje rezultat, da ti shrani
+-- C c + C n : odpre okno za računanja
+-- C c + C r : refine - če še nisi vpisal vprašaja, samo ime pogoja
 
 {-
    You can test whether your definition computes correctly by using
@@ -88,14 +99,16 @@ data ℕ : Set where
   zero : ℕ
   suc  : ℕ → ℕ
 
+
 {-# BUILTIN NATURAL ℕ #-}
+
 
 {-
    Define a function that increments the given number by one.
 -}
 
 incr : ℕ → ℕ
-incr n = {!!}
+incr n = suc n
 
 {-
    Define a function that decrements a number by one. Give the definition
@@ -103,15 +116,16 @@ incr n = {!!}
 -}
 
 decr : ℕ → ℕ
-decr n = {!!}
-
+decr zero = zero
+decr (suc n) = n
 {-
    Define a function that triples the value of a given number.
    Your definition should use both pattern-matching and recursion.
 -}
 
 triple : ℕ → ℕ
-triple n = {!!}
+triple zero = zero
+triple (suc n) = (suc (suc (suc ((triple n)))))
 
 
 ----------------
@@ -142,7 +156,8 @@ infixl 7  _*_
 -}
 
 _^_ : ℕ → ℕ → ℕ
-m ^ n = {!!}
+m ^ zero = suc zero
+m ^ suc n = m * (m ^ n)
 
 infixl 8  _^_
 
@@ -178,7 +193,10 @@ infixl 20 _I
 -}
 
 b-incr : Bin → Bin
-b-incr b = {!!}
+b-incr ⟨⟩ = ⟨⟩ I
+b-incr (b O) = b I
+b-incr (b I) = (b-incr b) O
+
 
 
 ----------------
@@ -195,12 +213,14 @@ b-incr b = {!!}
 -}
 
 to : ℕ → Bin
-to n = {!!}
+to zero = ⟨⟩ O
+to (suc n) = b-incr (to n)
 
 from : Bin → ℕ
 from b = {!!}
-
-
+ --  where
+  -- from-aux : Bin → N → N
+  -- from-aux b = {! !}
 ----------------
 -- Exercise 6 --
 ----------------
@@ -218,7 +238,7 @@ data Even : ℕ → Set where
 -}
 
 data Even₂ : Bin → Set where
-  {- EXERCISE: add the constructors for this inductive predicate here -}
+  even₂ : {b : Bin} → Even₂ (b O)
 
 
 ----------------
@@ -230,6 +250,8 @@ data Even₂ : Bin → Set where
    if needed, do not be afraid to define auxiliary functions/proofs.
 -}
 
+-- Prove by induction
+-- p = even-z, p : Even n, zero-z : Even zero ==> n = zero 
 to-even : {n : ℕ} → Even n → Even₂ (to n)
 to-even p = {!!}
 
@@ -405,3 +427,4 @@ length-≤-≦ᴸ xs ys p = {!!}
    - "less than or equal" order
    - show that `from` takes even numbers to even numbers
 -}
+     

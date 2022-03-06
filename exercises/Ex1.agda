@@ -197,8 +197,6 @@ b-incr ⟨⟩ = ⟨⟩ I
 b-incr (b O) = b I
 b-incr (b I) = (b-incr b) O
 
-
-
 ----------------
 -- Exercise 5 --
 ----------------
@@ -217,10 +215,10 @@ to zero = ⟨⟩ O
 to (suc n) = b-incr (to n)
 
 from : Bin → ℕ
-from b = {!!}
- --  where
-  -- from-aux : Bin → N → N
-  -- from-aux b = {! !}
+from ⟨⟩ = zero
+from (b O) = 2 * (from b)
+from (b I) = 1 + 2 * (from b)
+
 ----------------
 -- Exercise 6 --
 ----------------
@@ -228,6 +226,7 @@ from b = {!!}
 {-
    Recall the "is even" predicate for unary numbers.
 -}
+
 
 data Even : ℕ → Set where
   even-z : Even zero
@@ -252,10 +251,14 @@ data Even₂ : Bin → Set where
 
 -- Prove by induction
 -- p = even-z, p : Even n, zero-z : Even zero ==> n = zero 
+
 to-even : {n : ℕ} → Even n → Even₂ (to n)
-to-even p = {!!}
-
-
+to-even even-z = even₂
+to-even (even-ss p) = b-incr-incr-even (to-even p)
+   where
+   b-incr-incr-even : {b : Bin} → Even₂ b → Even₂ (b-incr (b-incr b))
+   b-incr-incr-even {b O} even₂ = even₂
+   
 ----------------
 -- Exercise 8 --
 ----------------
@@ -335,7 +338,8 @@ infixr 5 _∷_
 -}
 
 map : {A B : Set} → (A → B) → List A → List B
-map f xs = {!!}
+map f [] = []
+map f (x ∷ xs) = (f x) ∷ (map f xs)
 
 
 -----------------
@@ -347,7 +351,8 @@ map f xs = {!!}
 -}
 
 length : {A : Set} → List A → ℕ
-length xs = {!!}
+length [] = zero
+length (x ∷ xs) = 1 + (length xs)
 
 -----------------
 -- Exercise 12 --
@@ -368,9 +373,8 @@ data _≡ᴺ_ : ℕ → ℕ → Set where
 -}
 
 map-≡ᴺ : {A B : Set} {f : A → B} → (xs : List A) → length xs ≡ᴺ length (map f xs)
-map-≡ᴺ xs = {!!}
-
-
+map-≡ᴺ [] = z≡ᴺz
+map-≡ᴺ (x ∷ p) = s≡ᴺs (map-≡ᴺ p)
 -----------------
 -- Exercise 13 --
 -----------------
@@ -392,10 +396,10 @@ infix 4 _≤_
 -}
 
 data _≤ᴸ_ {A : Set} : List A → List A → Set where
-  {- EXERCISE: add the constructors for this inductive relation here -}
+   []≤ᴸxs : {xs : List A} → [] ≤ᴸ xs
+   ∷≤ᴸ∷ : {x y : A} → {xs ys : List A} → xs ≤ᴸ ys → x ∷ xs ≤ᴸ y ∷ ys
 
 infix 4 _≤ᴸ_
-
 
 -----------------
 -- Exercise 14 --
@@ -407,14 +411,16 @@ infix 4 _≤ᴸ_
 -}
 
 length-≤ᴸ-≦ : {A : Set} {xs ys : List A} → xs ≤ᴸ ys → length xs ≤ length ys
-length-≤ᴸ-≦ p = {!!}
+length-≤ᴸ-≦ []≤ᴸxs = z≤n
+length-≤ᴸ-≦ (∷≤ᴸ∷ p) = s≤s (length-≤ᴸ-≦ p)
 
 length-≤-≦ᴸ : {A : Set} (xs ys : List A) → length xs ≤ length ys → xs ≤ᴸ ys
-length-≤-≦ᴸ xs ys p = {!!}
+length-≤-≦ᴸ [] ys z≤n = []≤ᴸxs
+length-≤-≦ᴸ (x ∷ xs) (x₁ ∷ ys) (s≤s p) = ∷≤ᴸ∷ (length-≤-≦ᴸ xs ys p)
 
 
 -----------------
--- Exercise 14 --
+-- Exercise 15 --
 -----------------
 
 {-
@@ -427,4 +433,4 @@ length-≤-≦ᴸ xs ys p = {!!}
    - "less than or equal" order
    - show that `from` takes even numbers to even numbers
 -}
-     
+       

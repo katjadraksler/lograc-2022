@@ -101,13 +101,23 @@ postulate
 -}
 
 +-identityʳ : (n : ℕ) → n + zero ≡ n
-+-identityʳ n = {!!}
++-identityʳ zero = 
+   begin
+   zero + zero ≡⟨ refl ⟩ zero
+   ∎
 
++-identityʳ (suc n) =
+  begin
+  suc n + zero ≡⟨ cong suc (+-identityʳ n) ⟩ suc n
+  ∎
+      
 +-identityˡ : (n : ℕ) → zero + n ≡ n
-+-identityˡ n = {!!}
++-identityˡ zero = refl
++-identityˡ (suc n) = cong suc refl
 
 +-suc : (n m : ℕ) → n + (suc m) ≡ suc (n + m)
-+-suc n m = {!!}
++-suc zero m = refl
++-suc (suc n) m = cong suc (+-suc n m)
 
 
 ----------------
@@ -141,8 +151,9 @@ data Maybe (A : Set) : Set where
   nothing : Maybe A
 
 lookup : {A : Set} {n : ℕ} → Vec A n → ℕ → Maybe A
-lookup xs i = {!!}
-
+lookup [] i = nothing
+lookup (x ∷ xs) zero = just x
+lookup (x ∷ xs) (suc i) = lookup xs i
 
 ----------------
 -- Exercise 2 --
@@ -170,7 +181,7 @@ n > m = m < n
 infix 4 _<_
 infix 4 _>_
 
-data ⊤ : Set where
+data ⊤ : Set where                              -- Unit type has one element
   ⋆ : ⊤                                         -- `⋆` typed as `\*`
 
 lookup-totalᵀ : {n : ℕ}
@@ -179,8 +190,15 @@ lookup-totalᵀ : {n : ℕ}
               → i < n                           -- `i` in `{0,1,...,n-1}`
               → lookup xs i ≡ just ⋆
              
-lookup-totalᵀ xs i p = {!!}
+lookup-totalᵀ (⋆ ∷ xs) zero (s≤s p) = refl
+lookup-totalᵀ (⋆ ∷ xs) (suc i) (s≤s p) = lookup-totalᵀ xs i p
 
+vec-reverse : {A : Set} → {n : ℕ} → Vec A n → Vec A n 
+vec-reverse {A} xs = rev [] xs
+   where
+   rev : {k m : ℕ} → Vec A k → Vec A m → Vec A (k + m)
+   rev {k} xs [] rewrite +-identityʳ k = xs
+   rev {k} {m} xs (x ∷ ys) = subst ((Vec A)) (sym (+-suc _ _)) (rev (x ∷ xs) ys)
 {-
    Note: In the standard library, `⊤` is defined as a record type. Here
    we defined it temporarily as an inductive type because you have not
@@ -214,12 +232,12 @@ lookup-totalᵀ xs i p = {!!}
 -}
 
 data Fin : ℕ → Set where
-  zero : {n : ℕ} → Fin (suc n)
-  suc  : {n : ℕ} (i : Fin n) → Fin (suc n)
+  zero' : {n : ℕ} → Fin (suc n)
+  suc'  : {n : ℕ} (i : Fin n) → Fin (suc n)
 
 safe-lookup : {A : Set} {n : ℕ} → Vec A n → Fin n → A
-safe-lookup xs i = {!!}
-
+safe-lookup (x ∷ xs) zero' = x
+safe-lookup (x ∷ xs) (suc' i) = safe-lookup xs i
 
 ----------------
 -- Exercise 4 --
@@ -238,8 +256,9 @@ safe-lookup xs i = {!!}
    the correct type, the yellow highlighting below will disappear.
 -}
 
-nat-to-fin : {!!}
-nat-to-fin = {!!}
+nat-to-fin : {m : ℕ} → (n : ℕ) → n < m → Fin m 
+nat-to-fin zero (s≤s p) = zero'
+nat-to-fin (suc n) (s≤s p) = suc' (nat-to-fin n p)
 
 lookup-correct : {A : Set} {n : ℕ}
                → (xs : Vec A n)
@@ -247,7 +266,18 @@ lookup-correct : {A : Set} {n : ℕ}
                → (p : i < n)
                → lookup xs i ≡ just (safe-lookup xs (nat-to-fin i p))
 
-lookup-correct x i p = {!!}
+lookup-correct (x ∷ x₁) zero (s≤s p) = refl
+lookup-correct (x ∷ x₁) (suc i) (s≤s p) = 
+   begin 
+         lookup ((x ∷ x₁)) ((suc i)) 
+      ≡⟨ refl ⟩ 
+         lookup x₁ i
+      ≡⟨ lookup-correct x₁ i p ⟩ 
+         just (safe-lookup x₁ (nat-to-fin i p))
+      ≡⟨ refl ⟩ 
+         just (safe-lookup ((x ∷ x₁)) (nat-to-fin (suc i) (s≤s p)))
+      ∎
+
 
 
 ----------------
@@ -259,8 +289,8 @@ lookup-correct x i p = {!!}
    vector of length `n + m`.
 -}
 
-take-n : {A : Set} {n m : ℕ} → Vec A (n + m) → Vec A n
-take-n xs = {!!}
+-- take-n : {A : Set} {n m : ℕ} → Vec A (n + m) → Vec A n
+-- take-n {n = n} {m} xs = {!   !}
 
 
 ----------------
@@ -273,8 +303,8 @@ take-n xs = {!!}
    by recursion. Use `take-n` and equational reasoning instead.
 -}
 
-take-n' : {A : Set} {n m : ℕ} → Vec A (m + n) → Vec A n
-take-n' xs = {!!}
+-- take-n' : {A : Set} {n m : ℕ} → Vec A (m + n) → Vec A n
+-- take-n' xs = {!!}
 
 
 ----------------
@@ -287,7 +317,8 @@ take-n' xs = {!!}
 -}
 
 vec-list : {A : Set} {n : ℕ} → Vec A n → List A
-vec-list xs = {!!}
+vec-list [] = []
+vec-list (x ∷ xs) = x ∷ vec-list xs
 
 {-
    Define a function from lists to vectors that is identity on the
@@ -297,8 +328,9 @@ vec-list xs = {!!}
    natural number specifying the length of the returned vector.
 -}
 
-list-vec : {A : Set} → (xs : List A) → Vec A {!!}
-list-vec xs = {!!}
+list-vec : {A : Set} → (xs : List A) → Vec A (length xs)
+list-vec [] = []
+list-vec (x ∷ xs) = x ∷ list-vec xs
 
 
 ----------------
@@ -314,8 +346,15 @@ vec-list-length : {A : Set} {n : ℕ}
                 → (xs : Vec A n)
                 → n ≡ length (vec-list xs)
                 
-vec-list-length xs = {!!}
-
+vec-list-length [] = refl
+vec-list-length {n = suc n} (x ∷ xs) =
+   begin
+      suc n 
+         ≡⟨ cong suc (vec-list-length xs) ⟩ 
+      suc (length (vec-list xs))
+            ≡⟨ refl ⟩ 
+      length (vec-list (x ∷ xs))
+      ∎
 
 ----------------
 -- Exercise 9 --
@@ -343,8 +382,13 @@ Matrix A m n = Vec (Vec A n) m
    of two vectors of the same length.
 -}
 
+_+ⱽ_ : {n : ℕ} → Vec ℕ n → Vec ℕ n → Vec ℕ n 
+[] +ⱽ [] = []
+(x ∷ xs) +ⱽ (y ∷ ys) = (x + y) ∷ (xs +ⱽ ys)
+
 _+ᴹ_ : {m n : ℕ} → Matrix ℕ m n → Matrix ℕ m n → Matrix ℕ m n
-xss +ᴹ yss = {!!}
+[] +ᴹ [] = []
+(xs ∷ xss) +ᴹ (ys ∷ yss) = (xs +ⱽ ys) ∷ (xss +ᴹ yss)
 
 
 -----------------------------
@@ -360,222 +404,249 @@ xss +ᴹ yss = {!!}
 -------------------------------------
 -------------------------------------
 
------------------
--- Exercise 10 --
------------------
+-- -----------------
+-- -- Exercise 10 --
+-- -----------------
 
-{-
-   Prove that `vec-list` is the left inverse of `list-vec`.
-   Observe that you have to prove equality between functions.
--}
+-- {-
+--    Prove that `vec-list` is the left inverse of `list-vec`.
+--    Observe that you have to prove equality between functions.
+-- -}
 
-list-vec-list : {A : Set}
-              → vec-list ∘ list-vec ≡ id {A = List A}
+-- list-vec-list : {A : Set}
+--               → vec-list ∘ list-vec ≡ id {A = List A}
               
-list-vec-list = {!!}
+-- list-vec-list = {!!}
 
 
------------------
--- Exercise 11 --
------------------
+-- -----------------
+-- -- Exercise 11 --
+-- -----------------
 
-{-
-   Define the transpose of a matrix.
+-- {-
+--    Define the transpose of a matrix.
 
-   Hint 1: You might find it helpful to define an auxiliary function
-   function to populate a length-n vector with a given value `x`.
+--    Hint 1: You might find it helpful to define an auxiliary function
+--    function to populate a length-n vector with a given value `x`.
 
-   Hint 2: When defining `transpose`, think how you would express it
-   in terms of the transpose of the submatrix without the first row.
--}
+--    Hint 2: When defining `transpose`, think how you would express it
+--    in terms of the transpose of the submatrix without the first row.
+-- -}
 
-transpose : {A : Set} {m n : ℕ} → Matrix A m n → Matrix A n m
-transpose xss = {!!}
+populate : {A : Set} {n : ℕ} → A → Vec A n 
+populate {n = zero} x = []
+populate {n = suc n} x = x ∷ populate x
 
+-- transpose : {A : Set} {m n : ℕ} → Matrix A m n → Matrix A n m
+-- transpose [] = populate []
+-- transpose {A} (xs ∷ xss) = {! transpore-aux  !}
+--    where
+--       transpose-aux : {k l : ℕ} → Vec A k → Matrix A l k → Matrix A l (suc k)
+--       transpose-aux [] [] = []
+--       transpose-aux [] (ys ∷ yss) = {!   !}
+--       transpose-aux (x ∷ xs) [] = {!   !}
+--       transpose-aux (x ∷ xs) (ys ∷ yss) = {!   !}
+   
+   
 
------------------
--- Exercise 12 --
------------------
+-- -----------------
+-- -- Exercise 12 --
+-- -----------------
 
-{-
-   Below we shall be working with sorted trees holding natural numbers,
-   variations of which occur commonly in computer science applications.
+-- {-
+--    Below we shall be working with sorted trees holding natural numbers,
+--    variations of which occur commonly in computer science applications.
 
-   When defining operations on such trees (e.g., inserting an element
-   into a tree), it will be useful to be able to test whether two
-   natural numbers are equal or related by the `<` or `>` relations.
-   Below we give an inductively defined relation that witnesses which
-   of these three situations holds of a given two natural numbers.
+--    When defining operations on such trees (e.g., inserting an element
+--    into a tree), it will be useful to be able to test whether two
+--    natural numbers are equal or related by the `<` or `>` relations.
+--    Below we give an inductively defined relation that witnesses which
+--    of these three situations holds of a given two natural numbers.
 
-   This is an instance of a more general phenomena of decidability
-   and reflection in type theory. For more information, see the Decidable
-   section in the PLFA textbook (https://plfa.inf.ed.ac.uk/Decidable/).
--}
+--    This is an instance of a more general phenomena of decidability
+--    and reflection in type theory. For more information, see the Decidable
+--    section in the PLFA textbook (https://plfa.inf.ed.ac.uk/Decidable/).
+-- -}
 
 data _</≡/>_ (n m : ℕ) : Set where
   n<m : n < m → n </≡/> m
   n≡m : n ≡ m → n </≡/> m
   n>m : n > m → n </≡/> m
 
-{-
-   Define a function `test-</≡/>` that, given two natural numbers,
-   returns the proof of either `n < m`, `n ≡ m`, or `n > m`
-   depending on the relationship between the given two numbers.
+-- {-
+--    Define a function `test-</≡/>` that, given two natural numbers,
+--    returns the proof of either `n < m`, `n ≡ m`, or `n > m`
+--    depending on the relationship between the given two numbers.
 
-   In its essence, the function `test-</≡/>` shows that the natural
-   ordering relation on natural numbers is total and decidable---we
-   can compute which of the three situations actually holds. See
-   PLFA (https://plfa.inf.ed.ac.uk/Decidable/) for more details.
--}
+--    In its essence, the function `test-</≡/>` shows that the natural
+--    ordering relation on natural numbers is total and decidable---we
+--    can compute which of the three situations actually holds. See
+--    PLFA (https://plfa.inf.ed.ac.uk/Decidable/) for more details.
+-- -}
 
 test-</≡/> : (n m : ℕ) → n </≡/> m
-test-</≡/> n m = {!!}
+test-</≡/> zero zero = n≡m refl
+test-</≡/> zero (suc m) = n<m (s≤s z≤n)
+test-</≡/> (suc n) zero = n>m (s≤s z≤n)
+test-</≡/> (suc n) (suc m) = aux (test-</≡/> n m) 
+   where 
+      aux : {m n : ℕ} → m </≡/> n → (suc m) </≡/> (suc n)
+      aux (n<m p) = n<m (s≤s p)
+      aux (n≡m p) = n≡m (cong suc p)
+      aux (n>m p) = n>m (s≤s p)
 
 
------------------
--- Exercise 13 --
------------------
+-- -----------------
+-- -- Exercise 13 --
+-- -----------------
 
-{-
-   Below is the inductive type `Tree A` of node-labelled binary trees
-   holding data of type `A` in their nodes. Such a tree is either an
-   `empty` tree (holding no data); or a root node built from a left
-   subtree `t`, data `n`, and a right subtree `u`, written `node t n u`.
+-- {-
+--    Below is the inductive type `Tree A` of node-labelled binary trees
+--    holding data of type `A` in their nodes. Such a tree is either an
+--    `empty` tree (holding no data); or a root node built from a left
+--    subtree `t`, data `n`, and a right subtree `u`, written `node t n u`.
 
-   For example, the binary tree
+--    For example, the binary tree
 
-           42
-           /\
-          /  \
-         22  52
-          \
-           \
-           32
+--            42
+--            /\
+--           /  \
+--          22  52
+--           \
+--            \
+--            32
 
-   would be represented in Agda as the expression
+--    would be represented in Agda as the expression
 
-     `node (node empty 22 (node empty 32 empty)) 42 (node empty 52 empty)`
+--      `node (node empty 22 (node empty 32 empty)) 42 (node empty 52 empty)`
 
-   of type `Tree ℕ`.
--}
+--    of type `Tree ℕ`.
+-- -}
 
 data Tree (A : Set) : Set where
   empty : Tree A
   node  : Tree A → A → Tree A → Tree A
 
-{-
-   For trees holding natural numbers, define a function that inserts a
-   given natural number into a tree following the insertion strategy for
-   binary search trees (https://en.wikipedia.org/wiki/Binary_search_tree).
+-- {-
+--    For trees holding natural numbers, define a function that inserts a
+--    given natural number into a tree following the insertion strategy for
+--    binary search trees (https://en.wikipedia.org/wiki/Binary_search_tree).
 
-   Namely, when inserting a number `n` into an `empty` tree, the function
-   should create a new trivial tree containing just `n`; and when recursively
-   inserting a number `n` into a tree of the form `node t m u`, the function
-   should behave as one of the following three cases:
-   - if n = m, then the function just returns the given tree, doing nothing;
-   - if n < m, then the function recursively tries to add `n` into `t`; or
-   - if n > m, then the function recursively tries to add `n` into `u`.
+--    Namely, when inserting a number `n` into an `empty` tree, the function
+--    should create a new trivial tree containing just `n`; and when recursively
+--    inserting a number `n` into a tree of the form `node t m u`, the function
+--    should behave as one of the following three cases:
+--    - if n = m, then the function just returns the given tree, doing nothing;
+--    - if n < m, then the function recursively tries to add `n` into `t`; or
+--    - if n > m, then the function recursively tries to add `n` into `u`.
 
-   Hint: When testing which of the three situations holds for a `node t m u`
-   case, you might find it helpful to use Agda's `with` abstraction
-   (https://agda.readthedocs.io/en/v2.6.2.1/language/with-abstraction.html)
-   to do perform pattern-matching without having to define auxiliary functions.
--}
+--    Hint: When testing which of the three situations holds for a `node t m u`
+--    case, you might find it helpful to use Agda's `with` abstraction
+--    (https://agda.readthedocs.io/en/v2.6.2.1/language/with-abstraction.html)
+--    to do perform pattern-matching without having to define auxiliary functions.
+-- -}
 
 insert : Tree ℕ → ℕ → Tree ℕ
-insert t n = {!!}
+insert empty x = node empty x empty
+insert (node l n d) x with test-</≡/> x n
+... | n<m p = node (insert l x) n d
+... | n≡m p = node l n d
+... | n>m p = node l n (insert d x)
 
-{-
-   As a sanity check, prove that inserting 12, 27, and 52 into the above
-   example tree correctly returns the expected trees.
--}
+-- {-
+--    As a sanity check, prove that inserting 12, 27, and 52 into the above
+--    example tree correctly returns the expected trees.
+-- -}
 
 insert-12 : insert (node (node empty 22 (node empty 32 empty)) 42 (node empty 52 empty)) 12
             ≡
             node (node (node empty 12 empty) 22 (node empty 32 empty)) 42 (node empty 52 empty)
-insert-12 = {!!}
+insert-12 = refl
 
 insert-27 : insert (node (node empty 22 (node empty 32 empty)) 42 (node empty 52 empty)) 27
             ≡
             node (node empty 22 (node (node empty 27 empty) 32 empty)) 42 (node empty 52 empty)
-insert-27 = {!!}            
+insert-27 = refl            
 
 insert-52 : insert (node (node empty 22 (node empty 32 empty)) 42 (node empty 52 empty)) 52
             ≡
             node (node empty 22 (node empty 32 empty)) 42 (node empty 52 empty)
-insert-52 = {!!}
+insert-52 = refl
 
 
------------------
--- Exercise 14 --
------------------
+-- -----------------
+-- -- Exercise 14 --
+-- -----------------
 
-{-
-   Define an inductive relation `∈` that specifies that a given natural
-   number exists in the given tree.
+-- {-
+--    Define an inductive relation `∈` that specifies that a given natural
+--    number exists in the given tree.
 
-   Hint: This relation should specify a path in a given tree from its
-   root to the desired natural number whose existence we are specifying.
--}
+--    Hint: This relation should specify a path in a given tree from its
+--    root to the desired natural number whose existence we are specifying.
+-- -}
 
 data _∈_ (n : ℕ) : Tree ℕ → Set where
-  {- EXERCISE: the constructors for the `∈` relation go here -}
+  here  : {l d : Tree ℕ} → n ∈ node l n d
+  left  : {l d : Tree ℕ} {m : ℕ} → n ∈ l → n ∈ node l m d
+  right : {l d : Tree ℕ} {m : ℕ} → n ∈ d → n ∈ node l m d
 
 
-{-
-   Prove that the tree returned by the `insert` function indeed
-   contains the inserted natural number.
+-- {-
+--    Prove that the tree returned by the `insert` function indeed
+--    contains the inserted natural number.
 
-   Hint: If you used Agda's `with` abstraction for pattern-matching in
-   the definition of `insert`, you will need to perform similar amount
-   of pattern-matching also in this proof to make the type of the hole
-   compute. You can tell when this is needed because the type of the
-   hole will involve an expression of the form `f v | g w`, meaning
-   that in order for `f v` to be computed and normalised further, you
-   need to first pattern-match on the value of `g v` (using `with`).
+--    Hint: If you used Agda's `with` abstraction for pattern-matching in
+--    the definition of `insert`, you will need to perform similar amount
+--    of pattern-matching also in this proof to make the type of the hole
+--    compute. You can tell when this is needed because the type of the
+--    hole will involve an expression of the form `f v | g w`, meaning
+--    that in order for `f v` to be computed and normalised further, you
+--    need to first pattern-match on the value of `g v` (using `with`).
 
-   If you haven't spotted this already, then it is part of a general
-   pattern---proofs often follow the same structure as the definitions.
--}
+--    If you haven't spotted this already, then it is part of a general
+--    pattern---proofs often follow the same structure as the definitions.
+-- -}
 
 insert-∈ : (t : Tree ℕ) → (n : ℕ) → n ∈ (insert t n)
-insert-∈ t n = {!!}
+insert-∈ empty x = here
+insert-∈ (node l n d) x with test-</≡/> n x
+... | p = {!   !}
+
+-- -----------------------------------
+-- -----------------------------------
+-- -- MORE INVOLVED EXERCISES [END] --
+-- -----------------------------------
+-- -----------------------------------
 
 
------------------------------------
------------------------------------
--- MORE INVOLVED EXERCISES [END] --
------------------------------------
------------------------------------
+-- -------------------------------------
+-- -------------------------------------
+-- -- MOST INVOLVED EXERCISES [START] --
+-- -------------------------------------
+-- -------------------------------------
 
+-- -----------------
+-- -- Exercise 15 --
+-- -----------------
 
--------------------------------------
--------------------------------------
--- MOST INVOLVED EXERCISES [START] --
--------------------------------------
--------------------------------------
+-- {-
+--    While above you were asked to define the `insert` function
+--    following the insertion strategy for binary search trees, then
+--    concretely the function is still working on arbitrary binary
+--    trees. Here we will define an inductive predicate to classify
+--    binary trees that are indeed binary search trees and prove that
+--    the `insert` function preserves this predicate.
+-- -}
 
------------------
--- Exercise 15 --
------------------
-
-{-
-   While above you were asked to define the `insert` function
-   following the insertion strategy for binary search trees, then
-   concretely the function is still working on arbitrary binary
-   trees. Here we will define an inductive predicate to classify
-   binary trees that are indeed binary search trees and prove that
-   the `insert` function preserves this predicate.
--}
-
-{-
-   Before we define the binary search tree predicate, we extend
-   the type of natural numbers with bottom and top elements,
-   written `-∞` and `+∞` (for symmetry and their analogy with
-   negative and positive infinities; also, `⊥` and `⊤` are already
-   used in Agda for the empty and unit type). We then also extend the
-   order `<` to take these new bottom and top elements into account.
--}
+-- {-
+--    Before we define the binary search tree predicate, we extend
+--    the type of natural numbers with bottom and top elements,
+--    written `-∞` and `+∞` (for symmetry and their analogy with
+--    negative and positive infinities; also, `⊥` and `⊤` are already
+--    used in Agda for the empty and unit type). We then also extend the
+--    order `<` to take these new bottom and top elements into account.
+-- -}
 
 data ℕ∞ : Set where
   -∞  :     ℕ∞
@@ -587,140 +658,141 @@ data _<∞_ : ℕ∞ → ℕ∞ → Set where
   []<[] : {n m : ℕ}   → n < m → [ n ] <∞ [ m ]
   n<+∞  : {n   : ℕ∞}  →           n   <∞  +∞
 
-{-
-   Using this extended definition of natural numbers, we next define
-   an inductive predicate `IsBST` on binary trees that specifies when
-   a given binary tree holding natural numbers is in fact a binary
-   search tree (https://en.wikipedia.org/wiki/Binary_search_tree).
+-- {-
+--    Using this extended definition of natural numbers, we next define
+--    an inductive predicate `IsBST` on binary trees that specifies when
+--    a given binary tree holding natural numbers is in fact a binary
+--    search tree (https://en.wikipedia.org/wiki/Binary_search_tree).
 
-   Note that, concretely, the `IsBST` predicate consists of two definitions:
-   - the `IsBST` predicate, which is the "top-level" predicate specifying
-     that a given binary tree is in a binary search tree format; and
-   - the recursively defined relation `IsBST-rec`, which does most of the
-     work in imposing the binary search tree invariant on the given tree.
+--    Note that, concretely, the `IsBST` predicate consists of two definitions:
+--    - the `IsBST` predicate, which is the "top-level" predicate specifying
+--      that a given binary tree is in a binary search tree format; and
+--    - the recursively defined relation `IsBST-rec`, which does most of the
+--      work in imposing the binary search tree invariant on the given tree.
 
-   The `IsBST-rec` relation carries two additional `ℕ∞`-arguments that
-   specify the range of values a given binary search tree is allowed
-   to hold, in particular, which values the left and right subtrees of
-   a `node t n u` tree node are allowed to store. Further, note that the
-   `empty` case holds a proof that `lower` is indeed less than `upper`.   
--}
+--    The `IsBST-rec` relation carries two additional `ℕ∞`-arguments that
+--    specify the range of values a given binary search tree is allowed
+--    to hold, in particular, which values the left and right subtrees of
+--    a `node t n u` tree node are allowed to store. Further, note that the
+--    `empty` case holds a proof that `lower` is indeed less than `upper`.   
+-- -}
 
-data IsBST-rec (lower upper : ℕ∞) : Tree ℕ → Set where
-  empty-bst : (p : lower <∞ upper) → IsBST-rec lower upper empty
-  node-bst  : {t u : Tree ℕ} {n : ℕ}
-            → IsBST-rec lower [ n ] t
-            → IsBST-rec [ n ] upper u
-            → IsBST-rec lower upper (node t n u)
+-- data IsBST-rec (lower upper : ℕ∞) : Tree ℕ → Set where
+--   empty-bst : (p : lower <∞ upper) → IsBST-rec lower upper empty
+--   node-bst  : {t u : Tree ℕ} {n : ℕ}
+--             → IsBST-rec lower [ n ] t
+--             → IsBST-rec [ n ] upper u
+--             → IsBST-rec lower upper (node t n u)
 
-data IsBST : Tree ℕ → Set where
-  empty-bst : IsBST empty
-  node-bst  : {t u : Tree ℕ} {n : ℕ}
-            → IsBST-rec -∞ [ n ] t
-            → IsBST-rec [ n ] +∞ u
-            → IsBST (node t n u)
+-- data IsBST : Tree ℕ → Set where
+--   empty-bst : IsBST empty
+--   node-bst  : {t u : Tree ℕ} {n : ℕ}
+--             → IsBST-rec -∞ [ n ] t
+--             → IsBST-rec [ n ] +∞ u
+--             → IsBST (node t n u)
 
-{-
-   Prove that having the `(p : lower <∞ upper)` proof witness in the
-   `empty` cases of the `IsBST-rec` relation indeed forces the `<∞`
-   relation to hold for the bound indices of `IsBST-rec` in general.
+-- {-
+--    Prove that having the `(p : lower <∞ upper)` proof witness in the
+--    `empty` cases of the `IsBST-rec` relation indeed forces the `<∞`
+--    relation to hold for the bound indices of `IsBST-rec` in general.
 
-   Hint: You might find it helpful to prove the transitivity of `<∞`.
--}
+--    Hint: You might find it helpful to prove the transitivity of `<∞`.
+-- -}
 
-isbst-rec-<∞ : {lower upper : ℕ∞} {t : Tree ℕ}
-             → IsBST-rec lower upper t
-             → lower <∞ upper
+-- isbst-rec-<∞ : {lower upper : ℕ∞} {t : Tree ℕ}
+--              → IsBST-rec lower upper t
+--              → lower <∞ upper
              
-isbst-rec-<∞ p = {!!}
+-- isbst-rec-<∞ p = {!!}
 
-{-
-   Disclaimer: The `(p : lower <∞ upper)` proof witness in the `empty`
-   case of the `IsBST-rec` relation means that every proof about a
-   given tree being a binary search tree needs one to construct such
-   proofs explicitly for all `empty` (sub)trees. For example, see below:
--}
+-- {-
+--    Disclaimer: The `(p : lower <∞ upper)` proof witness in the `empty`
+--    case of the `IsBST-rec` relation means that every proof about a
+--    given tree being a binary search tree needs one to construct such
+--    proofs explicitly for all `empty` (sub)trees. For example, see below:
+-- -}
 
-bst : IsBST (node (node empty 2 (node empty 3 empty)) 5 (node empty 6 empty))
-bst = node-bst
-        (node-bst
-           (empty-bst -∞<n)
-           (node-bst
-              (empty-bst ([]<[] (s≤s (s≤s (s≤s z≤n)))))
-              (empty-bst ([]<[] (s≤s (s≤s (s≤s (s≤s z≤n))))))))
-        (node-bst
-           (empty-bst ([]<[] (s≤s (s≤s (s≤s (s≤s (s≤s (s≤s z≤n))))))))
-           (empty-bst n<+∞))
+-- bst : IsBST (node (node empty 2 (node empty 3 empty)) 5 (node empty 6 empty))
+-- bst = node-bst
+--         (node-bst
+--            (empty-bst -∞<n)
+--            (node-bst
+--               (empty-bst ([]<[] (s≤s (s≤s (s≤s z≤n)))))
+--               (empty-bst ([]<[] (s≤s (s≤s (s≤s (s≤s z≤n))))))))
+--         (node-bst
+--            (empty-bst ([]<[] (s≤s (s≤s (s≤s (s≤s (s≤s (s≤s z≤n))))))))
+--            (empty-bst n<+∞))
 
-{-
-   A more user-friendly variant of the `IsBST-rec` relation could use
-   Agda's instance arguments `{{...}}` and type classes to attempt to
-   automatically fill in such proof witnesses as much as possible.
+-- {-
+--    A more user-friendly variant of the `IsBST-rec` relation could use
+--    Agda's instance arguments `{{...}}` and type classes to attempt to
+--    automatically fill in such proof witnesses as much as possible.
    
-   You don't need to switch to instance arguments here, but they could
-   be useful in your project work. For more information about them, see
-   https://agda.readthedocs.io/en/v2.6.2.1/language/instance-arguments.html.
-   Instance arguments and type classes will also be covered in lectures.
+--    You don't need to switch to instance arguments here, but they could
+--    be useful in your project work. For more information about them, see
+--    https://agda.readthedocs.io/en/v2.6.2.1/language/instance-arguments.html.
+--    Instance arguments and type classes will also be covered in lectures.
 
-   Note: Other proof assistants can have different ways how to fill
-   such proof witnesses in automatically, ranging from tactics and
-   meta-programming to refinement types and SMT-based automation.
--}
-
-
------------------
--- Exercise 16 --
------------------
-
-{-
-   Prove that being a binary search tree is invariant under `insert`.
-
-   Hint: As the `IsBST` predicate is defined in two steps, then you
-   might find it useful to prove an auxiliary lemma about `insert`
-   preserving also the recursively defined `IsBST-rec` relation.
--}
-
-insert-bst : (t : Tree ℕ) → (n : ℕ) → IsBST t → IsBST (insert t n)
-insert-bst t n p = {!!}
+--    Note: Other proof assistants can have different ways how to fill
+--    such proof witnesses in automatically, ranging from tactics and
+--    meta-programming to refinement types and SMT-based automation.
+-- -}
 
 
------------------
--- Exercise 17 --
------------------
+-- -----------------
+-- -- Exercise 16 --
+-- -----------------
 
-{-
-   Prove that `list-vec` is the left inverse of `vec-list`.
-   Observe that you have to prove equality between functions.
+-- {-
+--    Prove that being a binary search tree is invariant under `insert`.
 
-   Note that if we simply wrote `id` as the right-hand side of the
-   equational property below we would get a typing error about a
-   mismatch in the natural number indices. Find a way to fix the type
-   of a given vector to use it in the right-hand side of the equation.
+--    Hint: As the `IsBST` predicate is defined in two steps, then you
+--    might find it useful to prove an auxiliary lemma about `insert`
+--    preserving also the recursively defined `IsBST-rec` relation.
+-- -}
 
-   Hint 1: For a slightly unsatisfactory solution, think how you could
-   convert a given vector to another of a given type using recursion.
+-- insert-bst : (t : Tree ℕ) → (n : ℕ) → IsBST t → IsBST (insert t n)
+-- insert-bst t n p = {!!}
 
-   Hint 2: For a more complete solution, recall from the lecture how
-   one change the type of a given value (e.g., a vector) using a
-   previously proved equality proof, and then combine this with one of
-   the equational lemmas we proved above.
 
-   WARNING: The hint 2 solution of this exercise is probably the most
-   complex on this exercise sheet, as it will require some careful
-   thought when generalising the concrete statement you are trying to
-   prove, relating element-wise equality of vectors to the `≡` relation
-   on vectors, etc. So we suggest you leave this one for the very last.
--}
+-- -----------------
+-- -- Exercise 17 --
+-- -----------------
 
-vec-list-vec : {A : Set} {n : ℕ}
-             → list-vec ∘ vec-list ≡ {!!}
+-- {-
+--    Prove that `list-vec` is the left inverse of `vec-list`.
+--    Observe that you have to prove equality between functions.
+
+--    Note that if we simply wrote `id` as the right-hand side of the
+--    equational property below we would get a typing error about a
+--    mismatch in the natural number indices. Find a way to fix the type
+--    of a given vector to use it in the right-hand side of the equation.
+
+--    Hint 1: For a slightly unsatisfactory solution, think how you could
+--    convert a given vector to another of a given type using recursion.
+
+--    Hint 2: For a more complete solution, recall from the lecture how
+--    one change the type of a given value (e.g., a vector) using a
+--    previously proved equality proof, and then combine this with one of
+--    the equational lemmas we proved above.
+
+--    WARNING: The hint 2 solution of this exercise is probably the most
+--    complex on this exercise sheet, as it will require some careful
+--    thought when generalising the concrete statement you are trying to
+--    prove, relating element-wise equality of vectors to the `≡` relation
+--    on vectors, etc. So we suggest you leave this one for the very last.
+-- -}
+
+-- vec-list-vec : {A : Set} {n : ℕ}
+--              → list-vec ∘ vec-list ≡ {!!}
                
-vec-list-vec = {!!}
+-- vec-list-vec = {!!}
 
 
------------------------------------
------------------------------------
--- MOST INVOLVED EXERCISES [END] --
------------------------------------
------------------------------------
+-- -----------------------------------
+-- -----------------------------------
+-- -- MOST INVOLVED EXERCISES [END] --
+-- -----------------------------------
+-- -----------------------------------
 
+         

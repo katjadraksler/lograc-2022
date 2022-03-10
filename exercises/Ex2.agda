@@ -83,7 +83,6 @@ open import Axiom.Extensionality.Propositional using (Extensionality)
 postulate
   fun-ext : ∀ {a b} → Extensionality a b
 
-
 -------------------------------
 -------------------------------
 -- SIMPLER EXERCISES [START] --
@@ -205,7 +204,6 @@ vec-reverse {A} xs = rev [] xs
    yet learned about record types in Agda.
 -}
 
-
 ----------------
 -- Exercise 3 --
 ----------------
@@ -279,7 +277,6 @@ lookup-correct (x ∷ x₁) (suc i) (s≤s p) =
       ∎
 
 
-
 ----------------
 -- Exercise 5 --
 ----------------
@@ -289,9 +286,9 @@ lookup-correct (x ∷ x₁) (suc i) (s≤s p) =
    vector of length `n + m`.
 -}
 
--- take-n : {A : Set} {n m : ℕ} → Vec A (n + m) → Vec A n
--- take-n {n = n} {m} xs = {!   !}
-
+take-n : {A : Set} {n m : ℕ} → Vec A (n + m) → Vec A n
+take-n {n = zero} {m} xs = []
+take-n {n = suc n} {m} (x ∷ xs) = x ∷ take-n xs
 
 ----------------
 -- Exercise 6 --
@@ -304,7 +301,8 @@ lookup-correct (x ∷ x₁) (suc i) (s≤s p) =
 -}
 
 -- take-n' : {A : Set} {n m : ℕ} → Vec A (m + n) → Vec A n
--- take-n' xs = {!!}
+-- take-n' {n = zero} xs = []
+-- take-n' {A} {n = suc n} {m} xs = take-n (subst (Vec A) (+-comm m (suc n)) xs)
 
 
 ----------------
@@ -347,14 +345,13 @@ vec-list-length : {A : Set} {n : ℕ}
                 → n ≡ length (vec-list xs)
                 
 vec-list-length [] = refl
-vec-list-length {n = suc n} (x ∷ xs) =
+vec-list-length {n = suc n} (x ∷ xs) = 
    begin
-      suc n 
-         ≡⟨ cong suc (vec-list-length xs) ⟩ 
-      suc (length (vec-list xs))
-            ≡⟨ refl ⟩ 
-      length (vec-list (x ∷ xs))
-      ∎
+   suc n
+   ≡⟨ cong suc (vec-list-length xs) ⟩
+   length (vec-list (x ∷ xs))
+   ∎
+   
 
 ----------------
 -- Exercise 9 --
@@ -795,4 +792,4 @@ data _<∞_ : ℕ∞ → ℕ∞ → Set where
 -- -----------------------------------
 -- -----------------------------------
 
-         
+           

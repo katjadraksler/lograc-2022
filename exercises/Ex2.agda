@@ -65,6 +65,7 @@ open import Function using (id; _∘_)
 import Relation.Binary.PropositionalEquality as Eq
 open Eq using (_≡_; refl; sym; trans; cong; subst; resp)
 open Eq.≡-Reasoning using (begin_; _≡⟨⟩_; step-≡; _∎)
+open import Data.Nat.Properties  using (+-comm)
 open import Axiom.Extensionality.Propositional using (Extensionality)
 
 {-
@@ -300,9 +301,9 @@ take-n {n = suc n} {m} (x ∷ xs) = x ∷ take-n xs
    by recursion. Use `take-n` and equational reasoning instead.
 -}
 
--- take-n' : {A : Set} {n m : ℕ} → Vec A (m + n) → Vec A n
--- take-n' {n = zero} xs = []
--- take-n' {A} {n = suc n} {m} xs = take-n (subst (Vec A) (+-comm m (suc n)) xs)
+take-n' : {A : Set} {n m : ℕ} → Vec A (m + n) → Vec A n
+take-n' {n = zero} xs = []
+take-n' {A} {n = suc n} {m} xs = take-n (subst (Vec A) (+-comm m (suc n)) xs)
 
 
 ----------------
@@ -410,11 +411,14 @@ _+ᴹ_ : {m n : ℕ} → Matrix ℕ m n → Matrix ℕ m n → Matrix ℕ m n
 --    Observe that you have to prove equality between functions.
 -- -}
 
--- list-vec-list : {A : Set}
---               → vec-list ∘ list-vec ≡ id {A = List A}
+list-vec-list : {A : Set}
+              → vec-list ∘ list-vec ≡ id {A = List A}
               
--- list-vec-list = {!!}
-
+list-vec-list = fun-ext list-vec-list-aux
+   where
+      list-vec-list-aux : (xs : List _) → (vec-list ∘ list-vec) xs ≡ id xs
+      list-vec-list-aux [] = refl
+      list-vec-list-aux (x ∷ xs) = cong (x ∷_) (list-vec-list-aux xs)
 
 -- -----------------
 -- -- Exercise 11 --
@@ -607,8 +611,12 @@ data _∈_ (n : ℕ) : Tree ℕ → Set where
 
 insert-∈ : (t : Tree ℕ) → (n : ℕ) → n ∈ (insert t n)
 insert-∈ empty x = here
-insert-∈ (node l n d) x with test-</≡/> n x
-... | p = {!   !}
+insert-∈ (node l n d) x with test-</≡/> x n 
+... | n<m (s≤s p) = left (insert-∈ l x)
+... | n≡m refl = here
+... | n>m (s≤s p) = right (insert-∈ d x)
+
+
 
 -- -----------------------------------
 -- -----------------------------------
@@ -792,4 +800,4 @@ data _<∞_ : ℕ∞ → ℕ∞ → Set where
 -- -----------------------------------
 -- -----------------------------------
 
-           
+            

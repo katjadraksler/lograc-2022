@@ -169,7 +169,7 @@ lookup-total-Σ : {A : Set} {n : ℕ}
                → i < n
                → Σ[ x ∈ A ] (lookup xs i ≡ just x)
 
-lookup-total-Σ (x ∷ xs) zero p = x , refl
+lookup-total-Σ (x ∷ xs) zero (s≤s p) = x , refl
 lookup-total-Σ (x ∷ xs) (suc i) (s≤s p) = lookup-total-Σ xs i p
 
 ----------------
@@ -189,11 +189,10 @@ lookup-total-Σ (x ∷ xs) (suc i) (s≤s p) = lookup-total-Σ xs i p
 vec-list-Σ : {A : Set} {n : ℕ} → Vec A n → Σ[ xs ∈ List A ] (length xs ≡ n)
 vec-list-Σ [] = [] , refl
 vec-list-Σ (x ∷ xs) with vec-list-Σ xs
-... | xs' , p = (x ∷ xs') , (cong suc p)
+... | xs' , p = x ∷ xs' , cong suc p
 
 -- first component list
 -- second component proof that length of this list is suc n
-
 
 ----------------
 -- Exercise 5 --
@@ -218,7 +217,21 @@ list-ext : {A : Set} {xs ys : List A}
               → safe-list-lookup xs i p ≡ safe-list-lookup ys i q)
          → xs ≡ ys
 
-list-ext = {!   !}
+list-ext {xs = []} {[]} p1 p2 = refl
+list-ext {xs = x ∷ xs} {y ∷ ys} p1 p2 = 
+   begin
+      x ∷ xs
+      ≡⟨ cong (x ∷_) (list-ext (suc-inj p1) (λ i p q → p2 (suc i) (s≤s p) (s≤s q))) ⟩ 
+      x ∷ ys
+      ≡⟨ cong (_∷ ys) (p2 zero (s≤s z≤n) (s≤s z≤n)) ⟩ 
+      y ∷ ys
+      ∎
+   where
+      suc-inj : {n m : ℕ} → suc n ≡ suc m → n ≡ m
+      suc-inj refl = refl
+
+
+
 {-
    Notice that we have generalised this statement a bit compared
    to what one would have likely written down in the first place.
@@ -267,10 +280,11 @@ open _≃_
           ≃
           Σ[ xy ∈ Σ[ x ∈ A ] (B x) ] (C (proj₁ xy) (proj₂ xy))
         
-Σ-assoc = record {to      = λ {(x , y , z) → (x , y) , z};
-                  from    = λ {((x , y) , z) → x , y , z};
-                  from∘to = λ { xyz → refl } ; 
-                  to∘from = λ xyz → refl }
+Σ-assoc = record { 
+   to =      λ {(x , y , z) → (x , y) , z } ; 
+   from =    λ { ((x , y) , z) → x , (y , z) } ; 
+   from∘to = λ x → refl ; 
+   to∘from = λ y → refl }
 
 {-
    Second, prove the same thing using copatterns. For a reference on copatterns,
@@ -306,9 +320,26 @@ to∘from Σ-assoc' _ = refl
    from∘to = λ xs →
        begin
        map (from p) (map (to p) xs)
-       ≡⟨ {!   !} ⟩
-       {! map (from iso ∘   !}; 
-   to∘from = {!   !} }
+       ≡⟨ sym (map-compose xs) ⟩
+       map (from p ∘ to p) xs
+       ≡⟨ cong (λ f → map f xs) (fun-ext (from∘to p)) ⟩
+       map id xs
+       ≡⟨ map-id xs ⟩
+       xs
+       ∎; 
+   to∘from = λ xs → 
+      begin
+      map (to p) (map (from p) xs)
+      ≡⟨ sym (map-compose xs) ⟩
+      map (to p ∘ from p) xs
+      ≡⟨ cong (λ f → map f xs) (fun-ext (to∘from p)) ⟩
+       map id xs
+       ≡⟨ map-id xs ⟩
+       xs
+      ∎
+   }
+
+-- (x : List A) → map (from p) (map (to p) x) ≡ x
 
 
 ----------------
@@ -336,7 +367,18 @@ open DecSet
 -}
 
 DecList : (DS : DecSet) → Σ[ DS' ∈ DecSet ] (DSet DS' ≡ List (DSet DS))
-DecList DS = {!!}
+DecList DS = record {
+                DSet = List (DSet DS) ; 
+                test-≡ = test-≡-list } ,
+             {!   !}
+
+               where
+               test-≡-list : (xs ys : List (DSet DS)) → Dec (xs ≡ ys)
+               test-≡-list [] [] = yes refl
+               test-≡-list [] (y ∷ ys) = no λ ()
+               test-≡-list (x ∷ xs) [] = no (λ ())
+               test-≡-list (x ∷ xs) (y ∷ ys) = {!   !}
+
 
 
 ----------------
@@ -493,4 +535,4 @@ open import Data.Nat.Properties
 
 from-bin-≡ : (b : Bin) → from-bin b ≡ from-bin' b
 from-bin-≡ b = {!!}
-  
+   
